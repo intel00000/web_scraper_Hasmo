@@ -1,0 +1,9 @@
+# ignore all file in folder Source Code
+build/*
+dist/*
+logs/*
+
+# ignore python virtual environment
+venv/*
+
+reference.ipynb
