@@ -10,3 +10,4 @@ reference.ipynb
 
 *.pyc
 .env
+credentials.json

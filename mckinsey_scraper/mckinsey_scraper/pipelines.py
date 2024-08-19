@@ -49,15 +49,19 @@ class ExportPipeline:
         spider.logger.info("ExportPipeline closed the files.")
 
 
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
 # Load the environment variables from the .env file
-load_dotenv(dotenv_path="../../.env")
+env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+load_dotenv(dotenv_path=env_path)
 
 # Set the OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(
+    # This is the default and can be omitted
+    api_key=os.getenv("OPENAI_API_KEY"),
+)
 
 # Define the word count limit as a macro
 WORD_COUNT_LIMIT = 50  # You can adjust this as needed
@@ -85,17 +89,101 @@ class OpenAIPipeline:
             )
 
             # Call the OpenAI API
-            chat_completion = openai.ChatCompletion.create(
+            chat_completion = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "system", "content": prompt}],
                 max_tokens=WORD_COUNT_LIMIT,
                 temperature=0.7,
+                service_tier="default",
+                stream=False,
             )
 
             # Extract the summary from the response
-            summary = chat_completion.choices[0].message["content"].strip()
+            summary = chat_completion.choices[0].message.content.strip()
             return summary
 
         except Exception as e:
             print(f"Failed to generate summary: {e}")
             return "Failed to generate summary."
+
+
+import os
+import datetime
+import gspread
+from google.oauth2.service_account import Credentials
+
+# Set the Google Sheets scope and credentials
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+SERVICE_ACCOUNT_FILE = os.path.join("configs", "credentials.json")
+
+# Load the Google Sheets API credentials
+credentials = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+
+class GoogleSheetsPipeline:
+    def open_spider(self, spider):
+        # Initialize the Google Sheets client
+        self.client = gspread.authorize(credentials)
+
+        # Check or create a folder named after the BOT_NAME
+        drive_service = build("drive", "v3", credentials=credentials)
+        folder_name = spider.settings.get("BOT_NAME", "ScrapyBot")
+        folder_id = self.get_or_create_folder(drive_service, folder_name)
+
+        # Create a new Google Spreadsheet with the same name as the ExportPipeline output file
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.spreadsheet_name = f"{spider.name}_{timestamp}"
+        self.spreadsheet = self.client.create(self.spreadsheet_name)
+        self.spreadsheet.share(
+            spider.settings.get("SERVICE_ACCOUNT_EMAIL"),
+            perm_type="user",
+            role="writer",
+        )
+        self.worksheet = self.spreadsheet.get_worksheet(0)
+
+        # Flag to track if we've added headers
+        self.headers_added = False
+
+    def get_or_create_folder(self, drive_service, folder_name):
+        # Search for the folder in Google Drive
+        response = (
+            drive_service.files()
+            .list(
+                q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'",
+                spaces="drive",
+            )
+            .execute()
+        )
+
+        files = response.get("files", [])
+        if not files:
+            # Folder doesn't exist, create it
+            file_metadata = {
+                "name": folder_name,
+                "mimeType": "application/vnd.google-apps.folder",
+            }
+            file = (
+                drive_service.files().create(body=file_metadata, fields="id").execute()
+            )
+            folder_id = file.get("id")
+        else:
+            # Folder exists, use the existing folder
+            folder_id = files[0]["id"]
+
+        return folder_id
+
+    def process_item(self, item, spider):
+        # Convert item to a list of values ordered by headers
+        if not self.headers_added:
+            headers = list(item.keys())
+            self.worksheet.append_row(headers)
+            self.headers_added = True
+
+        # Append the item as a new row in the sheet
+        row = [item.get(header) for header in self.worksheet.row_values(1)]
+        self.worksheet.append_row(row)
+
+        return item

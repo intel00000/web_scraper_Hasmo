@@ -88,8 +88,11 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
+    "mckinsey_scraper.pipelines.OpenAIPipeline": 100,
+    "mckinsey_scraper.pipelines.GoogleSheetsPipeline": 200,
     "mckinsey_scraper.pipelines.ExportPipeline": 300,
 }
+
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

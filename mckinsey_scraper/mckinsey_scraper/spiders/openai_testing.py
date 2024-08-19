@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 import os
 
 # Load the environment variables from the .env file
-load_dotenv(dotenv_path="../../../.env")
+load_dotenv(
+    dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
+)
 
 # Set the OpenAI API key
 client = OpenAI(
