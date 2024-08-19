@@ -44,7 +44,7 @@ class McKinseyCaseStudiesSpider(scrapy.Spider):
 
     def start_requests(self):
         url = "https://www.mckinsey.com/about-us/case-studies"
-        yield scrapy.Request(url=url, callback=self.parse)
+        yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
 
     def parse(self, response):
         main_container = response.xpath("/html/body/div[1]/main/div[2]")
@@ -70,7 +70,6 @@ class McKinseyCaseStudiesSpider(scrapy.Spider):
             # Skip the row if there is no title and link
             if not title and not article_url:
                 continue
-
             # Construct full URL for the article
             article_full_url = response.urljoin(article_url)
 
@@ -87,6 +86,7 @@ class McKinseyCaseStudiesSpider(scrapy.Spider):
                     "image_url": image_url,
                     "date": date if date else "No date found",
                 },
+                dont_filter=True,
             )
 
     def parse_article(self, response):
@@ -96,24 +96,19 @@ class McKinseyCaseStudiesSpider(scrapy.Spider):
         ).getall()
         article_text = " ".join([p.strip() for p in paragraphs if p.strip()])
 
-        # Gather meta data
-        title = response.meta["title"]
-        url = response.meta["url"]
-        image_url = response.meta["image_url"]
-        description = response.meta["description"]
-        date = response.meta["date"]
-
         # Yield the combined data and export it
         item = {
-            "title": title,
-            "url": url,
-            "image_url": image_url,
-            "description": description,
-            "date": date,
+            "title": response.meta["title"],
+            "description": response.meta["description"],
+            "url": response.meta["url"],
+            "image_url": response.meta["image_url"],
+            "date": response.meta["date"],
             "article_text": article_text,
         }
         self.json_exporter.export_item(item)
         self.csv_exporter.export_item(item)
+
+        yield item
 
     def close(self, reason):
         # Finish exporting and close the file
