@@ -18,7 +18,7 @@ class McKinseyCaseBlogSpider(scrapy.Spider):
         + ".log",
     }
 
-    def __init__(self, start_page=1, end_page=1, *args, **kwargs):
+    def __init__(self, start_page=0, end_page=50, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.start_page = int(start_page)
         self.end_page = int(end_page)
@@ -42,8 +42,9 @@ class McKinseyCaseBlogSpider(scrapy.Spider):
             return
 
         # Cookies are now stored in the session, proceed with the API requests
-        self.base_url = "https://prd-api.mckinsey.com/v1/blogs/new-at-mckinsey-blog/"
-        url = f"{self.base_url}{self.start_page}"
+        self.base_url = "https://prd-api.mckinsey.com/v1/blogs/new-at-mckinsey-blog"
+        if self.start_page == 0:
+            url = f"{self.base_url}"
         yield scrapy.Request(
             url=url,
             callback=self.parse_api,
@@ -63,13 +64,17 @@ class McKinseyCaseBlogSpider(scrapy.Spider):
         data = json.loads(response.text)
 
         for result in data["results"]:
+            image_src = result.get("imageurl")
+            # swap the empty space to %20 in the image URL
+            if image_src:
+                image_src = image_src.replace(" ", "%20")
             # Extract data from the API response
             item = {
                 "title": result.get("title"),
                 "description": result.get("description"),
                 "body": result.get("body"),
                 "display_date": result.get("displaydate"),
-                "image_url": result.get("imageurl"),
+                "image_url": self.base_url_response.urljoin(image_src),
                 "blog_tags": [
                     tag.get("title") for tag in result.get("blogentrytags", [])
                 ],
@@ -107,9 +112,10 @@ class McKinseyCaseBlogSpider(scrapy.Spider):
 
     def parse_article(self, response):
         # Extract all text content from <p> and <h> tags
-        article_text = " ".join(
-            response.xpath("//p | //h1 | //h2 | //h3 | //h4 | //h5 | //h6").extract()
-        )
+        paragraphs = response.xpath(
+            "//p//text() | //h1//text() | //h2//text() | //h3//text() | //h4//text() | //h5//text() | //h6//text()"
+        ).getall()
+        article_text = " ".join([p.strip() for p in paragraphs if p.strip()])
 
         # generate the dictionary to store the data
         item = {

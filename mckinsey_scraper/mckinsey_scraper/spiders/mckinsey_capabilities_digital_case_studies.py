@@ -4,26 +4,27 @@ import datetime
 import requests
 
 
-class McKinseyCaseStudiesSpider(scrapy.Spider):
-    name = "mckinsey_case_studies"
+class McKinseyDigitalCaseStudiesSpider(scrapy.Spider):
+    name = "mckinsey_capabilities_digital_case_studies"
 
     custom_settings = {
         "LOG_ENABLED": True,
         "LOG_LEVEL": "DEBUG",
         "LOG_FILE_APPEND": True,
-        "LOG_FILE": "mckinsey_case_studies_"
+        "LOG_FILE": "mckinsey_capabilities_digital_case_studies_"
         + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         + ".log",
     }
 
     def start_requests(self):
-        url = "https://www.mckinsey.com/about-us/case-studies"
+        url = "https://www.mckinsey.com/capabilities/mckinsey-digital/case-studies"
         yield scrapy.Request(url=url, callback=self.parse, dont_filter=True)
 
     def parse(self, response):
-        main_container = response.xpath("/html/body/div[1]/main/div[2]")
-        containers = main_container.xpath('//div[@class="mck-o-container"]')
-        containers = containers.xpath(
+        main_container = response.xpath(
+            "/html/body/div[1]/main/div[2]/div/div/div[2]/div"
+        )
+        containers = main_container.xpath(
             '//div[contains(@class, "mdc-u-grid mdc-u-grid-gutter-lg")]'
         )
 
@@ -44,6 +45,7 @@ class McKinseyCaseStudiesSpider(scrapy.Spider):
             # Skip the row if there is no title and link
             if not title and not article_url:
                 continue
+
             # Construct full URL for the article
             article_full_url = response.urljoin(article_url)
 
@@ -83,14 +85,14 @@ class McKinseyCaseStudiesSpider(scrapy.Spider):
         yield item
 
 
-# For testing in Jupyter, use the following code:
+# For testing in a local environment
 if __name__ == "__main__":
-    url = "https://www.mckinsey.com/about-us/case-studies"
+    url = "https://www.mckinsey.com/capabilities/mckinsey-digital/case-studies"
     r = requests.get(url)
     response = HtmlResponse(url=url, body=r.text, encoding="utf-8")
 
     # Instantiate the spider
-    spider = McKinseyCaseStudiesSpider()
+    spider = McKinseyDigitalCaseStudiesSpider()
 
     # Manually call the parse method to test
     for item in spider.parse(response):

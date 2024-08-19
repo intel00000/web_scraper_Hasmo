@@ -4,3 +4,4 @@ Scrapy
 
 pandas
 openpyxl
+aiofiles

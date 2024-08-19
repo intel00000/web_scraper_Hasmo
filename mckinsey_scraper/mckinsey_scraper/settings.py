@@ -76,7 +76,7 @@ DEFAULT_REQUEST_HEADERS = {
 #    "mckinsey_scraper.middlewares.MckinseyScraperDownloaderMiddleware": 543,
 # }
 DOWNLOADER_MIDDLEWARES = {
-    "myproject.middlewares.RandomUserAgentMiddleware": 400,
+    "mckinsey_scraper.middlewares.RandomUserAgentMiddleware": 400,
 }
 
 # Enable or disable extensions
@@ -88,7 +88,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "myproject.pipelines.ExportPipeline": 300,
+    "mckinsey_scraper.pipelines.ExportPipeline": 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
