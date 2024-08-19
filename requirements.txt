@@ -5,3 +5,6 @@ Scrapy
 pandas
 openpyxl
 aiofiles
+openai
+python-dotenv
+gspread
