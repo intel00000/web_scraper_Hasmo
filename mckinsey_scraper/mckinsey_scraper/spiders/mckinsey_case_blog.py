@@ -1,11 +1,8 @@
 import scrapy
-from scrapy.http import HtmlResponse
-from scrapy.exporters import JsonLinesItemExporter, CsvItemExporter
-from scrapy.downloadermiddlewares.retry import get_retry_request
-import requests
 import json
 import datetime
 import re
+from scrapy.downloadermiddlewares.retry import get_retry_request
 
 
 class McKinseyCaseBlogSpider(scrapy.Spider):
@@ -25,32 +22,13 @@ class McKinseyCaseBlogSpider(scrapy.Spider):
         super().__init__(*args, **kwargs)
         self.start_page = int(start_page)
         self.end_page = int(end_page)
-        # export to json file
-        self.json_output_file = open(
-            "mckinsey_case_blog_"
-            + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            + ".json",
-            "wb",
-        )
-        self.json_exporter = JsonLinesItemExporter(
-            self.json_output_file, encoding="utf-8", indent=4
-        )
-        # export to csv file
-        self.csv_output_file = open(
-            "mckinsey_case_blog_"
-            + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            + ".csv",
-            "wb",
-        )
-        self.csv_exporter = CsvItemExporter(self.csv_output_file, encoding="utf-8")
-
-        self.json_exporter.start_exporting()
-        self.csv_exporter.start_exporting()
 
     def start_requests(self):
         # First, make a request to the main blog page to get the cookies
         self.base_url = "https://www.mckinsey.com/about-us/new-at-mckinsey-blog"
-        yield scrapy.Request(url=self.base_url, callback=self.store_cookies, dont_filter=True)
+        yield scrapy.Request(
+            url=self.base_url, callback=self.store_cookies, dont_filter=True
+        )
 
     def store_cookies(self, response):
         # store the response object to use it later
@@ -144,11 +122,7 @@ class McKinseyCaseBlogSpider(scrapy.Spider):
             "article_text": article_text,
         }
 
-        # Export the data to JSON and CSV
-        self.json_exporter.export_item(item)
-        self.csv_exporter.export_item(item)
-
-        # Yield the combined data
+        # Yield the combined data to pipeline
         yield item
 
     def handle_error(self, failure):
@@ -163,11 +137,3 @@ class McKinseyCaseBlogSpider(scrapy.Spider):
             self.logger.error(
                 f"Request failed with status: {failure.value.response.status}. URL: {failure.request.url}"
             )
-
-    def close(self, reason):
-        # Finish exporting and close the file
-        self.json_exporter.finish_exporting()
-        self.json_output_file.close()
-        self.csv_exporter.finish_exporting()
-        self.csv_output_file.close()
-        self.logger.info("Spider closed: " + reason)
