@@ -22,8 +22,24 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 class ExportPipeline:
     def open_spider(self, spider):
         # Use the spider's name in the file names
-        self.json_output_file = open(f"{spider.name}_{timestamp}.json", "wb")
-        self.csv_output_file = open(f"{spider.name}_{timestamp}.csv", "wb")
+        json_output_file_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "data",
+            "raw",
+            f"{spider.name}_{timestamp}.json",
+        )
+        csv_output_file_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "data",
+            "raw",
+            f"{spider.name}_{timestamp}.csv",
+        )
+        self.json_output_file = open(json_output_file_path, "wb")
+        self.csv_output_file = open(csv_output_file_path, "wb")
 
         # Initialize the exporters
         self.json_exporter = JsonLinesItemExporter(
@@ -56,19 +72,22 @@ import os
 
 # Load the environment variables from the .env file
 env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
-load_dotenv(dotenv_path=env_path)
-
-# Set the OpenAI API key
-client = OpenAI(
-    # This is the default and can be omitted
-    api_key=os.getenv("OPENAI_API_KEY"),
-)
 
 # Define the word count limit as a macro
 WORD_COUNT_LIMIT = 50  # You can adjust this as needed
 
 
 class OpenAIPipeline:
+    def __init__(self):
+        self.client = None
+
+    def open_spider(self, spider):
+        load_dotenv(dotenv_path=env_path)
+        # Set the OpenAI API key
+        self.client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+        )
+
     def process_item(self, item, spider):
         article_text = item.get("article_text", "")
         if article_text:
@@ -90,7 +109,7 @@ class OpenAIPipeline:
             )
 
             # Call the OpenAI API
-            chat_completion = client.chat.completions.create(
+            chat_completion = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "system", "content": prompt}],
                 max_tokens=WORD_COUNT_LIMIT,
@@ -119,48 +138,46 @@ scope = [
 ]
 credentials_path = os.path.join(os.path.dirname(env_path), "credentials.json")
 
-# Load the Google Sheets and Drive API credentials
-creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
-gspread_client = gspread.authorize(creds)
-
 
 # GoogleSheetsPipeline class for exporting data to Google Sheets
 class GoogleSheetsPipeline:
     def __init__(self):
-        self.sheet_name = "Web Scraping Data"
-        self.worksheet_name = "Data"
+        self.spider = None
+
+        self.spreadsheet_name = "Web Scraping Data"
         self.spreadsheet = None
+
+        self.worksheet_name = "Data"
         self.worksheet = None
 
+        self.credentials = None
+        self.gspread_client = None
+
     def open_spider(self, spider):
-        self.spreadsheet_name = f"{spider.name}_Data"
+        self.spider = spider
+        self.worksheet_name = f"{spider.name}_Data"
+
+        # Load the Google Sheets and Drive API credentials
+        self.credentials = ServiceAccountCredentials.from_json_keyfile_name(
+            credentials_path, scope
+        )
+        self.gspread_client = gspread.authorize(self.credentials)
 
         # Access Google Sheets, first try opening the spreadsheet, if it doesn't exist, create a new one
         try:
-            self.spreadsheet = client.open(self.sheet_name)
+            self.spreadsheet = self.gspread_client.open(self.spreadsheet_name)
         except gspread.SpreadsheetNotFound:
-            self.spreadsheet = client.create(self.sheet_name)
+            self.spreadsheet = self.gspread_client.create(self.spreadsheet_name)
 
         # Set permissions
         self.spreadsheet.share(None, perm_type="anyone", role="writer")
 
-        # Find or create the worksheet
-        self.worksheet = self.setup_google_sheet(
-            self.spreadsheet.title, self.worksheet_name
-        )
-
-    def setup_google_sheet(self, sheet_name, worksheet_name):
         try:
-            sheet = client.open(sheet_name)
-        except gspread.SpreadsheetNotFound:
-            sheet = client.create(sheet_name)
-
-        try:
-            worksheet = sheet.worksheet(worksheet_name)
+            self.worksheet = self.spreadsheet.worksheet(self.worksheet_name)
         except gspread.WorksheetNotFound:
-            worksheet = sheet.add_worksheet(title=worksheet_name, rows="100", cols="20")
-
-        return worksheet
+            self.worksheet = self.spreadsheet.add_worksheet(
+                title=self.worksheet_name, rows="100", cols="20"
+            )
 
     def find_next_available_row(self, worksheet):
         str_list = list(filter(None, worksheet.col_values(1)))
@@ -182,7 +199,10 @@ class GoogleSheetsPipeline:
 
     def update_worksheet(self, worksheet, data):
         if not isinstance(data, dict):
-            raise DropItem(f"Unexpected data format: {data}. Expected a dictionary.")
+            self.spider.logger.error(
+                f"Invalid data format: {data}. Expected a dictionary."
+            )
+            return
 
         existing_headers = worksheet.row_values(1)
         header_indices = {
@@ -229,14 +249,17 @@ class GoogleSheetsPipeline:
             cell.value = row_data[i]
 
         worksheet.update_cells(cell_list)
-        time.sleep(1)
+        time.sleep(3)
 
     def process_item(self, item, spider):
         if isinstance(item, dict):
             self.update_worksheet(self.worksheet, item)
             return item
         else:
-            raise DropItem("Item is not a dictionary")
+            spider.logger.error(
+                f"Unexpected item format: {item}. Expected a dictionary."
+            )
+            return None
 
     def close_spider(self, spider):
         spider.logger.info(
