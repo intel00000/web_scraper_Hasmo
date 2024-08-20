@@ -151,6 +151,8 @@ class GoogleSheetsPipeline:
         self.credentials = None
         self.gspread_client = None
         self.maximum_backoff = 32
+        self.max_rows = 100
+        self.max_cols = 20
 
     def open_spider(self, spider):
         self.spider = spider
@@ -186,8 +188,8 @@ class GoogleSheetsPipeline:
             self.worksheet = self.retry_api_call(
                 self.spreadsheet.add_worksheet,
                 title=self.worksheet_name,
-                rows="100",
-                cols="20",
+                rows=self.max_rows,
+                cols=self.max_cols,
             )
 
     def find_next_available_row(self, worksheet):
@@ -245,6 +247,12 @@ class GoogleSheetsPipeline:
 
         if row_num is None:
             row_num = self.find_next_available_row(worksheet)
+
+        # Check if we need to resize the worksheet
+        if row_num > self.max_rows // 2 or len(existing_headers) > self.max_cols // 2:
+            self.max_rows *= 2
+            self.max_cols *= 2
+            self.retry_api_call(worksheet.resize, self.max_rows, self.max_cols)
 
         row_data = [""] * len(existing_headers)
 
