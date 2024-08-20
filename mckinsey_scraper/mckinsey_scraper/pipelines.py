@@ -129,6 +129,7 @@ class OpenAIPipeline:
 
 import gspread
 import time
+import random
 from oauth2client.service_account import ServiceAccountCredentials
 
 # Set up the Google Sheets and Drive API credentials and scope
@@ -143,15 +144,13 @@ credentials_path = os.path.join(os.path.dirname(env_path), "credentials.json")
 class GoogleSheetsPipeline:
     def __init__(self):
         self.spider = None
-
         self.spreadsheet_name = "Web Scraping Data"
         self.spreadsheet = None
-
         self.worksheet_name = "Data"
         self.worksheet = None
-
         self.credentials = None
         self.gspread_client = None
+        self.maximum_backoff = 32
 
     def open_spider(self, spider):
         self.spider = spider
@@ -165,33 +164,46 @@ class GoogleSheetsPipeline:
 
         # Access Google Sheets, first try opening the spreadsheet, if it doesn't exist, create a new one
         try:
-            self.spreadsheet = self.gspread_client.open(self.spreadsheet_name)
+            self.spreadsheet = self.retry_api_call(
+                self.gspread_client.open, self.spreadsheet_name
+            )
         except gspread.SpreadsheetNotFound:
-            self.spreadsheet = self.gspread_client.create(self.spreadsheet_name)
+            self.spreadsheet = self.retry_api_call(
+                self.gspread_client.create, self.spreadsheet_name
+            )
 
         # Set permissions
-        self.spreadsheet.share(None, perm_type="anyone", role="writer")
+        self.retry_api_call(
+            self.spreadsheet.share, None, perm_type="anyone", role="writer"
+        )
 
+        # Access or create worksheet
         try:
-            self.worksheet = self.spreadsheet.worksheet(self.worksheet_name)
+            self.worksheet = self.retry_api_call(
+                self.spreadsheet.worksheet, self.worksheet_name
+            )
         except gspread.WorksheetNotFound:
-            self.worksheet = self.spreadsheet.add_worksheet(
-                title=self.worksheet_name, rows="100", cols="20"
+            self.worksheet = self.retry_api_call(
+                self.spreadsheet.add_worksheet,
+                title=self.worksheet_name,
+                rows="100",
+                cols="20",
             )
 
     def find_next_available_row(self, worksheet):
-        str_list = list(filter(None, worksheet.col_values(1)))
+        str_list = self.retry_api_call(worksheet.col_values, 1)
+        str_list = list(filter(None, str_list))
         return len(str_list) + 1
 
     def find_column_by_header(self, worksheet, header_name):
-        headers = worksheet.row_values(1)
+        headers = self.retry_api_call(worksheet.row_values, 1)
         try:
             return headers.index(header_name) + 1
         except ValueError:
             return None
 
     def find_row_by_title(self, worksheet, title, title_column):
-        titles = worksheet.col_values(title_column)
+        titles = self.retry_api_call(worksheet.col_values, title_column)
         try:
             return titles.index(title) + 1
         except ValueError:
@@ -204,7 +216,7 @@ class GoogleSheetsPipeline:
             )
             return
 
-        existing_headers = worksheet.row_values(1)
+        existing_headers = self.retry_api_call(worksheet.row_values, 1)
         header_indices = {
             header: index + 1 for index, header in enumerate(existing_headers)
         }
@@ -217,7 +229,7 @@ class GoogleSheetsPipeline:
             cell_list = worksheet.range(1, 1, 1, len(existing_headers))
             for i, cell in enumerate(cell_list):
                 cell.value = existing_headers[i]
-            worksheet.update_cells(cell_list)
+            self.retry_api_call(worksheet.update_cells, cell_list)
             header_indices = {
                 header: index + 1 for index, header in enumerate(existing_headers)
             }
@@ -225,7 +237,7 @@ class GoogleSheetsPipeline:
         title_column = self.find_column_by_header(worksheet, "title")
         if title_column is None:
             title_column = 1
-            worksheet.update_cell(1, 1, "title")
+            self.retry_api_call(worksheet.update_cell, 1, 1, "title")
             header_indices["title"] = 1
 
         title = data.get("title", "")
@@ -248,8 +260,31 @@ class GoogleSheetsPipeline:
         for i, cell in enumerate(cell_list):
             cell.value = row_data[i]
 
-        worksheet.update_cells(cell_list)
-        time.sleep(3)
+        self.retry_api_call(worksheet.update_cells, cell_list)
+
+    def retry_api_call(self, func, *args, max_retries=15, **kwargs):
+        """Handles retrying API calls with exponential backoff."""
+        retries = 0
+        while retries < max_retries:
+            try:
+                return func(*args, **kwargs)
+            except gspread.exceptions.APIError as e:
+                if e.response.status_code == 429:
+                    retries += 1
+                    # cap the sleep time at the maximum backoff
+                    sleep_time = min(
+                        (2**retries) + random.randint(0, 1000) / 1000,
+                        self.maximum_backoff,
+                    )
+                    self.spider.logger.warning(
+                        f"Rate limit exceeded, retrying in {sleep_time:.2f} seconds..."
+                    )
+                    time.sleep(sleep_time)
+                else:
+                    raise e
+        else:
+            self.spider.logger.error("Max retries exceeded for API call.")
+            return None
 
     def process_item(self, item, spider):
         if isinstance(item, dict):
