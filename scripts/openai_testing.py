@@ -5,7 +5,7 @@ import os
 
 # Load the environment variables from the .env file
 load_dotenv(
-    dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
+    dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env")
 )
 
 # Set the OpenAI API key
@@ -51,15 +51,30 @@ def main():
     # Load the JSON file
     input_file = "sample_input.json"  # Replace with your JSON file path
     output_file = "sample_output_with_summaries.json"  # Output file path
-
     items = []
+
     with open(input_file, "r", encoding="utf-8") as f:
-        for line in f:
-            try:
-                item = json.loads(line.strip())  # Parse each line as a JSON object
-                items.append(item)
-            except json.JSONDecodeError as e:
-                print(f"Error decoding JSON: {e}")
+        try:
+            content = json.load(f)  # Try to load the entire file as a list of dicts
+            if isinstance(
+                content, dict
+            ):  # If the content is a single dictionary, make it a list
+                items.append(content)
+            elif isinstance(content, list):
+                items.extend(content)  # If it's a list of dicts, add all items
+            else:
+                print(
+                    f"Unexpected data format: {content}. Expected a list or dictionary."
+                )
+        except json.JSONDecodeError:
+            # If loading the entire file fails, try line by line processing
+            f.seek(0)  # Reset the file pointer to the beginning
+            for line in f:
+                try:
+                    item = json.loads(line.strip())  # Parse each line as a JSON object
+                    items.append(item)
+                except json.JSONDecodeError as e:
+                    print(f"Error decoding JSON on line: {line}. Error: {e}")
 
     # Process each item in the JSON file
     for item in items:

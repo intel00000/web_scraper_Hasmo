@@ -16,11 +16,12 @@ class MckinseyScraperPipeline:
 import datetime
 from scrapy.exporters import JsonLinesItemExporter, CsvItemExporter
 
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
 
 class ExportPipeline:
     def open_spider(self, spider):
         # Use the spider's name in the file names
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.json_output_file = open(f"{spider.name}_{timestamp}.json", "wb")
         self.csv_output_file = open(f"{spider.name}_{timestamp}.csv", "wb")
 
@@ -107,83 +108,95 @@ class OpenAIPipeline:
             return "Failed to generate summary."
 
 
-import os
-import datetime
 import gspread
-from google.oauth2.service_account import Credentials
+import time
+from oauth2client.service_account import ServiceAccountCredentials
 
-# Set the Google Sheets scope and credentials
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
+# Set up the Google Sheets and Drive API credentials and scope
+scope = [
+    "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive",
 ]
-SERVICE_ACCOUNT_FILE = os.path.join("configs", "credentials.json")
+credentials_path = os.path.join(os.path.dirname(env_path), "credentials.json")
 
-# Load the Google Sheets API credentials
-credentials = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+# Load the Google Sheets and Drive API credentials
+creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
+gspread_client = gspread.authorize(creds)
 
 
+# GoogleSheetsPipeline class for exporting data to Google Sheets
 class GoogleSheetsPipeline:
     def open_spider(self, spider):
-        # Initialize the Google Sheets client
-        self.client = gspread.authorize(credentials)
+        self.worksheet_name = "Web Scraping Data"
+        self.spreadsheet_name = f"{spider.name}_Data"
 
-        # Check or create a folder named after the BOT_NAME
-        drive_service = build("drive", "v3", credentials=credentials)
-        folder_name = spider.settings.get("BOT_NAME", "ScrapyBot")
-        folder_id = self.get_or_create_folder(drive_service, folder_name)
+        # Access or create the Google Sheet
+        try:
+            self.spreadsheet = gspread_client.open(self.spreadsheet_name)
+        except gspread.SpreadsheetNotFound:
+            self.spreadsheet = gspread_client.create(self.spreadsheet_name)
 
-        # Create a new Google Spreadsheet with the same name as the ExportPipeline output file
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.spreadsheet_name = f"{spider.name}_{timestamp}"
-        self.spreadsheet = self.client.create(self.spreadsheet_name)
-        self.spreadsheet.share(
-            spider.settings.get("SERVICE_ACCOUNT_EMAIL"),
-            perm_type="user",
-            role="writer",
-        )
-        self.worksheet = self.spreadsheet.get_worksheet(0)
+        # Set permissions
+        self.spreadsheet.share(None, perm_type="anyone", role="writer")
 
-        # Flag to track if we've added headers
-        self.headers_added = False
-
-    def get_or_create_folder(self, drive_service, folder_name):
-        # Search for the folder in Google Drive
-        response = (
-            drive_service.files()
-            .list(
-                q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'",
-                spaces="drive",
+        # Access or create the worksheet
+        try:
+            self.worksheet = self.spreadsheet.worksheet(self.worksheet_name)
+        except gspread.WorksheetNotFound:
+            self.worksheet = self.spreadsheet.add_worksheet(
+                title=self.worksheet_name, rows="100", cols="20"
             )
-            .execute()
-        )
-
-        files = response.get("files", [])
-        if not files:
-            # Folder doesn't exist, create it
-            file_metadata = {
-                "name": folder_name,
-                "mimeType": "application/vnd.google-apps.folder",
-            }
-            file = (
-                drive_service.files().create(body=file_metadata, fields="id").execute()
-            )
-            folder_id = file.get("id")
-        else:
-            # Folder exists, use the existing folder
-            folder_id = files[0]["id"]
-
-        return folder_id
 
     def process_item(self, item, spider):
-        # Convert item to a list of values ordered by headers
-        if not self.headers_added:
-            headers = list(item.keys())
-            self.worksheet.append_row(headers)
-            self.headers_added = True
-
-        # Append the item as a new row in the sheet
-        row = [item.get(header) for header in self.worksheet.row_values(1)]
-        self.worksheet.append_row(row)
-
+        self.update_worksheet(self.worksheet, item)
         return item
+
+    def find_next_available_row(self, worksheet):
+        str_list = list(
+            filter(None, worksheet.col_values(1))
+        )  # Find all non-empty rows in column 1
+        return len(str_list) + 1
+
+    def update_worksheet(self, worksheet, data):
+        # Ensure data is a dictionary
+        if not isinstance(data, dict):
+            print(f"Unexpected data format: {data}. Expected a dictionary.")
+            return
+
+        # Get the existing headers from the first row
+        existing_headers = worksheet.row_values(1)
+        header_indices = {
+            header: index + 1 for index, header in enumerate(existing_headers)
+        }
+
+        # Determine which headers are new and which already exist
+        headers = list(data.keys())
+        new_headers = [header for header in headers if header not in header_indices]
+
+        # Update the existing headers with data
+        next_row = self.find_next_available_row(worksheet)
+
+        # If there are new headers, add them to the sheet
+        if new_headers:
+            for header in new_headers:
+                new_col_num = len(existing_headers) + 1
+                worksheet.update_cell(1, new_col_num, header)
+                existing_headers.append(header)
+                header_indices[header] = new_col_num
+
+        # Prepare the row data to update all cells in a single request
+        row_data = []
+        for header in existing_headers:
+            value = data.get(header, "")
+            row_data.append(",".join(value) if isinstance(value, list) else value)
+
+        # Prepare the cell range to update
+        cell_list = worksheet.range(next_row, 1, next_row, len(existing_headers))
+
+        # Assign values to the cell list
+        for i, cell in enumerate(cell_list):
+            cell.value = row_data[i]
+
+        # Batch update the cells
+        worksheet.update_cells(cell_list)
+        time.sleep(1)  # Delay to respect API rate limits

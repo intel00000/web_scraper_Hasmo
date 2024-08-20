@@ -1,11 +1,12 @@
 import json
 import os
 import gspread
+import time
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 
 # Load environment variables from the .env file
-env_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
+env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(dotenv_path=env_path)
 
 # Set up the Google Sheets and Drive API credentials and scope
@@ -18,7 +19,6 @@ credentials_path = os.path.join(os.path.dirname(env_path), "credentials.json")
 # Load the Google Sheets and Drive API credentials
 creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
 client = gspread.authorize(creds)
-
 
 # Function to create or get the Google Sheet and worksheet
 def setup_google_sheet(sheet_name, worksheet_name):
@@ -38,6 +38,10 @@ def setup_google_sheet(sheet_name, worksheet_name):
 
     return worksheet
 
+# Function to find the next available row in the worksheet
+def find_next_available_row(worksheet):
+    str_list = list(filter(None, worksheet.col_values(1)))  # Find all non-empty rows in column 1
+    return len(str_list) + 1
 
 # Function to update the worksheet with the scraped data
 def update_worksheet(worksheet, data):
@@ -48,37 +52,44 @@ def update_worksheet(worksheet, data):
 
     # Get the existing headers from the first row
     existing_headers = worksheet.row_values(1)
-    header_indices = {
-        header: index + 1 for index, header in enumerate(existing_headers)
-    }
+    header_indices = {header: index + 1 for index, header in enumerate(existing_headers)}
 
     # Determine which headers are new and which already exist
     headers = list(data.keys())
     new_headers = [header for header in headers if header not in header_indices]
 
     # Update the existing headers with data
-    for header, value in data.items():
-        if header in header_indices:
-            col_num = header_indices[header]
-            worksheet.update_cell(
-                2, col_num, ",".join(value) if isinstance(value, list) else value
-            )
-        else:
-            # Add new headers and update data in new columns
+    next_row = find_next_available_row(worksheet)
+
+    # If there are new headers, add them to the sheet
+    if new_headers:
+        for header in new_headers:
             new_col_num = len(existing_headers) + 1
             worksheet.update_cell(1, new_col_num, header)
-            worksheet.update_cell(
-                2, new_col_num, ",".join(value) if isinstance(value, list) else value
-            )
-            # Update the existing headers and indices to include the new header
             existing_headers.append(header)
             header_indices[header] = new_col_num
+
+    # Prepare the row data to update all cells in a single request
+    row_data = []
+    for header in existing_headers:
+        value = data.get(header, "")
+        row_data.append(",".join(value) if isinstance(value, list) else value)
+
+    # Prepare the cell range to update
+    cell_list = worksheet.range(next_row, 1, next_row, len(existing_headers))
+
+    # Assign values to the cell list
+    for i, cell in enumerate(cell_list):
+        cell.value = row_data[i]
+
+    # Batch update the cells
+    worksheet.update_cells(cell_list)
+    time.sleep(1)  # Delay to respect API rate limits
 
 
 def main():
     # Load the JSON file
-    input_file = "sample_input.json"  # Replace with your JSON file path
-    output_file = "sample_output_with_summaries.json"  # Output file path
+    input_file = "sample_output_with_summaries.json"  # Replace with your JSON file path
     items = []
 
     with open(input_file, "r", encoding="utf-8") as f:
@@ -114,9 +125,9 @@ def main():
     spreadsheet.share(None, perm_type="anyone", role="writer")
     # find the worksheet by title
     try:
-        worksheet = spreadsheet.worksheet("Data")
+        worksheet = spreadsheet.worksheet("Data1")
     except gspread.WorksheetNotFound:
-        worksheet = spreadsheet.add_worksheet("Data", 100, 20)
+        worksheet = spreadsheet.add_worksheet("Data1", 100, 20)
 
     # Process each item in the JSON file
     for item in items:
