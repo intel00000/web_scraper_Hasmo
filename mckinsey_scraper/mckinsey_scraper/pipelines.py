@@ -126,77 +126,119 @@ gspread_client = gspread.authorize(creds)
 
 # GoogleSheetsPipeline class for exporting data to Google Sheets
 class GoogleSheetsPipeline:
+    def __init__(self):
+        self.sheet_name = "Web Scraping Data"
+        self.worksheet_name = "Data"
+        self.spreadsheet = None
+        self.worksheet = None
+
     def open_spider(self, spider):
-        self.worksheet_name = "Web Scraping Data"
         self.spreadsheet_name = f"{spider.name}_Data"
 
-        # Access or create the Google Sheet
+        # Access Google Sheets, first try opening the spreadsheet, if it doesn't exist, create a new one
         try:
-            self.spreadsheet = gspread_client.open(self.spreadsheet_name)
+            self.spreadsheet = client.open(self.sheet_name)
         except gspread.SpreadsheetNotFound:
-            self.spreadsheet = gspread_client.create(self.spreadsheet_name)
+            self.spreadsheet = client.create(self.sheet_name)
 
         # Set permissions
         self.spreadsheet.share(None, perm_type="anyone", role="writer")
 
-        # Access or create the worksheet
-        try:
-            self.worksheet = self.spreadsheet.worksheet(self.worksheet_name)
-        except gspread.WorksheetNotFound:
-            self.worksheet = self.spreadsheet.add_worksheet(
-                title=self.worksheet_name, rows="100", cols="20"
-            )
+        # Find or create the worksheet
+        self.worksheet = self.setup_google_sheet(
+            self.spreadsheet.title, self.worksheet_name
+        )
 
-    def process_item(self, item, spider):
-        self.update_worksheet(self.worksheet, item)
-        return item
+    def setup_google_sheet(self, sheet_name, worksheet_name):
+        try:
+            sheet = client.open(sheet_name)
+        except gspread.SpreadsheetNotFound:
+            sheet = client.create(sheet_name)
+
+        try:
+            worksheet = sheet.worksheet(worksheet_name)
+        except gspread.WorksheetNotFound:
+            worksheet = sheet.add_worksheet(title=worksheet_name, rows="100", cols="20")
+
+        return worksheet
 
     def find_next_available_row(self, worksheet):
-        str_list = list(
-            filter(None, worksheet.col_values(1))
-        )  # Find all non-empty rows in column 1
+        str_list = list(filter(None, worksheet.col_values(1)))
         return len(str_list) + 1
 
-    def update_worksheet(self, worksheet, data):
-        # Ensure data is a dictionary
-        if not isinstance(data, dict):
-            print(f"Unexpected data format: {data}. Expected a dictionary.")
-            return
+    def find_column_by_header(self, worksheet, header_name):
+        headers = worksheet.row_values(1)
+        try:
+            return headers.index(header_name) + 1
+        except ValueError:
+            return None
 
-        # Get the existing headers from the first row
+    def find_row_by_title(self, worksheet, title, title_column):
+        titles = worksheet.col_values(title_column)
+        try:
+            return titles.index(title) + 1
+        except ValueError:
+            return None
+
+    def update_worksheet(self, worksheet, data):
+        if not isinstance(data, dict):
+            raise DropItem(f"Unexpected data format: {data}. Expected a dictionary.")
+
         existing_headers = worksheet.row_values(1)
         header_indices = {
             header: index + 1 for index, header in enumerate(existing_headers)
         }
 
-        # Determine which headers are new and which already exist
         headers = list(data.keys())
         new_headers = [header for header in headers if header not in header_indices]
 
-        # Update the existing headers with data
-        next_row = self.find_next_available_row(worksheet)
-
-        # If there are new headers, add them to the sheet
         if new_headers:
-            for header in new_headers:
-                new_col_num = len(existing_headers) + 1
-                worksheet.update_cell(1, new_col_num, header)
-                existing_headers.append(header)
-                header_indices[header] = new_col_num
+            existing_headers.extend(new_headers)
+            cell_list = worksheet.range(1, 1, 1, len(existing_headers))
+            for i, cell in enumerate(cell_list):
+                cell.value = existing_headers[i]
+            worksheet.update_cells(cell_list)
+            header_indices = {
+                header: index + 1 for index, header in enumerate(existing_headers)
+            }
 
-        # Prepare the row data to update all cells in a single request
-        row_data = []
-        for header in existing_headers:
-            value = data.get(header, "")
-            row_data.append(",".join(value) if isinstance(value, list) else value)
+        title_column = self.find_column_by_header(worksheet, "title")
+        if title_column is None:
+            title_column = 1
+            worksheet.update_cell(1, 1, "title")
+            header_indices["title"] = 1
 
-        # Prepare the cell range to update
-        cell_list = worksheet.range(next_row, 1, next_row, len(existing_headers))
+        title = data.get("title", "")
+        row_num = self.find_row_by_title(worksheet, title, title_column)
 
-        # Assign values to the cell list
+        if row_num is None:
+            row_num = self.find_next_available_row(worksheet)
+
+        row_data = [""] * len(existing_headers)
+
+        for header, value in data.items():
+            col_num = header_indices.get(header)
+            if col_num is not None:
+                row_data[col_num - 1] = (
+                    ",".join(value) if isinstance(value, list) else value
+                )
+
+        cell_list = worksheet.range(row_num, 1, row_num, len(existing_headers))
+
         for i, cell in enumerate(cell_list):
             cell.value = row_data[i]
 
-        # Batch update the cells
         worksheet.update_cells(cell_list)
-        time.sleep(1)  # Delay to respect API rate limits
+        time.sleep(1)
+
+    def process_item(self, item, spider):
+        if isinstance(item, dict):
+            self.update_worksheet(self.worksheet, item)
+            return item
+        else:
+            raise DropItem("Item is not a dictionary")
+
+    def close_spider(self, spider):
+        spider.logger.info(
+            f"GoogleSheetsPipeline finished processing and saved data to {self.spreadsheet.url}"
+        )

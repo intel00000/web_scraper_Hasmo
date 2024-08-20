@@ -20,6 +20,7 @@ credentials_path = os.path.join(os.path.dirname(env_path), "credentials.json")
 creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
 client = gspread.authorize(creds)
 
+
 # Function to create or get the Google Sheet and worksheet
 def setup_google_sheet(sheet_name, worksheet_name):
     try:
@@ -38,10 +39,32 @@ def setup_google_sheet(sheet_name, worksheet_name):
 
     return worksheet
 
+
 # Function to find the next available row in the worksheet
 def find_next_available_row(worksheet):
-    str_list = list(filter(None, worksheet.col_values(1)))  # Find all non-empty rows in column 1
+    str_list = list(
+        filter(None, worksheet.col_values(1))
+    )  # Find all non-empty rows in column 1
     return len(str_list) + 1
+
+
+# Function to find the column number by header name
+def find_column_by_header(worksheet, header_name):
+    headers = worksheet.row_values(1)
+    try:
+        return headers.index(header_name) + 1  # Google Sheets is 1-indexed
+    except ValueError:
+        return None  # Return None if header is not found
+
+
+# Function to find the row number by title
+def find_row_by_title(worksheet, title, title_column):
+    titles = worksheet.col_values(title_column)
+    try:
+        return titles.index(title) + 1  # Google Sheets is 1-indexed
+    except ValueError:
+        return None  # Return None if title is not found
+
 
 # Function to update the worksheet with the scraped data
 def update_worksheet(worksheet, data):
@@ -52,31 +75,53 @@ def update_worksheet(worksheet, data):
 
     # Get the existing headers from the first row
     existing_headers = worksheet.row_values(1)
-    header_indices = {header: index + 1 for index, header in enumerate(existing_headers)}
+    header_indices = {
+        header: index + 1 for index, header in enumerate(existing_headers)
+    }
 
     # Determine which headers are new and which already exist
     headers = list(data.keys())
     new_headers = [header for header in headers if header not in header_indices]
 
-    # Update the existing headers with data
-    next_row = find_next_available_row(worksheet)
-
     # If there are new headers, add them to the sheet
     if new_headers:
-        for header in new_headers:
-            new_col_num = len(existing_headers) + 1
-            worksheet.update_cell(1, new_col_num, header)
-            existing_headers.append(header)
-            header_indices[header] = new_col_num
+        # Update the entire header row in a single command
+        existing_headers.extend(new_headers)
+        cell_list = worksheet.range(1, 1, 1, len(existing_headers))
+        for i, cell in enumerate(cell_list):
+            cell.value = existing_headers[i]
+        worksheet.update_cells(cell_list)
+        header_indices = {
+            header: index + 1 for index, header in enumerate(existing_headers)
+        }
+
+    # Find the column for the title
+    title_column = find_column_by_header(worksheet, "title")
+    if title_column is None:
+        # If the title column is not found, add it as the first column
+        title_column = 1
+        worksheet.update_cell(1, 1, "title")
+        header_indices["title"] = 1
+
+    # Check if the title already exists in the sheet
+    title = data.get("title", "")
+    row_num = find_row_by_title(worksheet, title, title_column)
+
+    if row_num is None:  # If the title is not found, add a new row
+        row_num = find_next_available_row(worksheet)
 
     # Prepare the row data to update all cells in a single request
-    row_data = []
-    for header in existing_headers:
-        value = data.get(header, "")
-        row_data.append(",".join(value) if isinstance(value, list) else value)
+    row_data = [""] * len(existing_headers)  # Initialize with empty strings
+
+    for header, value in data.items():
+        col_num = header_indices.get(header)
+        if col_num is not None:
+            row_data[col_num - 1] = (
+                ",".join(value) if isinstance(value, list) else value
+            )
 
     # Prepare the cell range to update
-    cell_list = worksheet.range(next_row, 1, next_row, len(existing_headers))
+    cell_list = worksheet.range(row_num, 1, row_num, len(existing_headers))
 
     # Assign values to the cell list
     for i, cell in enumerate(cell_list):
@@ -115,19 +160,18 @@ def main():
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON on line: {line}. Error: {e}")
 
-    # Access Google Sheets
-    # first try opening the spreadsheet, if it doesn't exist, create a new one
+    # Access Google Sheets, First try opening the spreadsheet, if it doesn't exist, create a new one
     try:
         spreadsheet = client.open("Web Scraping Data")  # Opens an existing spreadsheet
     except gspread.SpreadsheetNotFound:
         spreadsheet = client.create("Web Scraping Data")
-    # adjust the access permissions as needed
+
+    # Adjust the access permissions as needed
     spreadsheet.share(None, perm_type="anyone", role="writer")
-    # find the worksheet by title
-    try:
-        worksheet = spreadsheet.worksheet("Data1")
-    except gspread.WorksheetNotFound:
-        worksheet = spreadsheet.add_worksheet("Data1", 100, 20)
+
+    # Find the worksheet by title
+    worksheet_name = "Data1"
+    worksheet = setup_google_sheet(spreadsheet.title, worksheet_name)
 
     # Process each item in the JSON file
     for item in items:
