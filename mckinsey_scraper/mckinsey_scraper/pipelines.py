@@ -228,7 +228,9 @@ class GoogleSheetsPipeline:
 
         if new_headers:
             existing_headers.extend(new_headers)
-            cell_list = worksheet.range(1, 1, 1, len(existing_headers))
+            cell_list = self.retry_api_call(
+                worksheet.range, 1, 1, 1, len(existing_headers)
+            )
             for i, cell in enumerate(cell_list):
                 cell.value = existing_headers[i]
             self.retry_api_call(worksheet.update_cells, cell_list)
@@ -263,7 +265,9 @@ class GoogleSheetsPipeline:
                     ",".join(value) if isinstance(value, list) else value
                 )
 
-        cell_list = worksheet.range(row_num, 1, row_num, len(existing_headers))
+        cell_list = self.retry_api_call(
+            worksheet.range, row_num, 1, row_num, len(existing_headers)
+        )
 
         for i, cell in enumerate(cell_list):
             cell.value = row_data[i]

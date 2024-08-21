@@ -1,0 +1,154 @@
+2024-08-20 17:57:17 [scrapy.addons] INFO: Enabled addons:
+[]
+2024-08-20 17:57:17 [asyncio] DEBUG: Using selector: SelectSelector
+2024-08-20 17:57:17 [scrapy.utils.log] DEBUG: Using reactor: twisted.internet.asyncioreactor.AsyncioSelectorReactor
+2024-08-20 17:57:17 [scrapy.utils.log] DEBUG: Using asyncio event loop: asyncio.windows_events._WindowsSelectorEventLoop
+2024-08-20 17:57:17 [scrapy.extensions.telnet] INFO: Telnet Password: 1c351d605677acc3
+2024-08-20 17:57:17 [scrapy.middleware] INFO: Enabled extensions:
+['scrapy.extensions.corestats.CoreStats',
+ 'scrapy.extensions.telnet.TelnetConsole',
+ 'scrapy.extensions.logstats.LogStats']
+2024-08-20 17:57:17 [scrapy.crawler] INFO: Overridden settings:
+{'BOT_NAME': 'deloitte_scraper',
+ 'DOWNLOAD_DELAY': 1,
+ 'FEED_EXPORT_ENCODING': 'utf-8',
+ 'LOG_FILE': 'deloitte_industries_20240820_175717.log',
+ 'NEWSPIDER_MODULE': 'deloitte_scraper.spiders',
+ 'REQUEST_FINGERPRINTER_IMPLEMENTATION': '2.7',
+ 'SPIDER_MODULES': ['deloitte_scraper.spiders'],
+ 'TWISTED_REACTOR': 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'}
+2024-08-20 17:57:17 [scrapy.middleware] INFO: Enabled downloader middlewares:
+['scrapy.downloadermiddlewares.offsite.OffsiteMiddleware',
+ 'scrapy.downloadermiddlewares.httpauth.HttpAuthMiddleware',
+ 'scrapy.downloadermiddlewares.downloadtimeout.DownloadTimeoutMiddleware',
+ 'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware',
+ 'deloitte_scraper.middlewares.RandomUserAgentMiddleware',
+ 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware',
+ 'scrapy.downloadermiddlewares.retry.RetryMiddleware',
+ 'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware',
+ 'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware',
+ 'scrapy.downloadermiddlewares.redirect.RedirectMiddleware',
+ 'scrapy.downloadermiddlewares.cookies.CookiesMiddleware',
+ 'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware',
+ 'scrapy.downloadermiddlewares.stats.DownloaderStats']
+2024-08-20 17:57:17 [scrapy.middleware] INFO: Enabled spider middlewares:
+['scrapy.spidermiddlewares.httperror.HttpErrorMiddleware',
+ 'scrapy.spidermiddlewares.referer.RefererMiddleware',
+ 'scrapy.spidermiddlewares.urllength.UrlLengthMiddleware',
+ 'scrapy.spidermiddlewares.depth.DepthMiddleware']
+2024-08-20 17:57:18 [scrapy.middleware] INFO: Enabled item pipelines:
+['deloitte_scraper.pipelines.GoogleSheetsPipeline',
+ 'deloitte_scraper.pipelines.ExportPipeline']
+2024-08-20 17:57:18 [scrapy.core.engine] INFO: Spider opened
+2024-08-20 17:57:18 [urllib3.util.retry] DEBUG: Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2024-08-20 17:57:18 [google.auth.transport.requests] DEBUG: Making request: POST https://oauth2.googleapis.com/token
+2024-08-20 17:57:18 [urllib3.connectionpool] DEBUG: Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2024-08-20 17:57:18 [urllib3.connectionpool] DEBUG: https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2024-08-20 17:57:18 [urllib3.connectionpool] DEBUG: Starting new HTTPS connection (1): www.googleapis.com:443
+2024-08-20 17:57:18 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "GET /drive/v3/files?q=mimeType%3D%22application%2Fvnd.google-apps.spreadsheet%22+and+name+%3D+%22Web+Scraping+Data%22&pageSize=1000&supportsAllDrives=True&includeItemsFromAllDrives=True&fields=kind%2CnextPageToken%2Cfiles%28id%2Cname%2CcreatedTime%2CmodifiedTime%29 HTTP/1.1" 200 None
+2024-08-20 17:57:18 [urllib3.connectionpool] DEBUG: Starting new HTTPS connection (1): sheets.googleapis.com:443
+2024-08-20 17:57:18 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 429 None
+2024-08-20 17:57:18 [deloitte_industries] WARNING: Rate limit exceeded, retrying in 2.54 seconds...
+2024-08-20 17:57:21 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "GET /drive/v3/files?q=mimeType%3D%22application%2Fvnd.google-apps.spreadsheet%22+and+name+%3D+%22Web+Scraping+Data%22&pageSize=1000&supportsAllDrives=True&includeItemsFromAllDrives=True&fields=kind%2CnextPageToken%2Cfiles%28id%2Cname%2CcreatedTime%2CmodifiedTime%29 HTTP/1.1" 200 None
+2024-08-20 17:57:21 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 429 None
+2024-08-20 17:57:21 [deloitte_industries] WARNING: Rate limit exceeded, retrying in 4.41 seconds...
+2024-08-20 17:57:26 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "GET /drive/v3/files?q=mimeType%3D%22application%2Fvnd.google-apps.spreadsheet%22+and+name+%3D+%22Web+Scraping+Data%22&pageSize=1000&supportsAllDrives=True&includeItemsFromAllDrives=True&fields=kind%2CnextPageToken%2Cfiles%28id%2Cname%2CcreatedTime%2CmodifiedTime%29 HTTP/1.1" 200 None
+2024-08-20 17:57:26 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 429 None
+2024-08-20 17:57:26 [deloitte_industries] WARNING: Rate limit exceeded, retrying in 8.25 seconds...
+2024-08-20 17:57:35 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "GET /drive/v3/files?q=mimeType%3D%22application%2Fvnd.google-apps.spreadsheet%22+and+name+%3D+%22Web+Scraping+Data%22&pageSize=1000&supportsAllDrives=True&includeItemsFromAllDrives=True&fields=kind%2CnextPageToken%2Cfiles%28id%2Cname%2CcreatedTime%2CmodifiedTime%29 HTTP/1.1" 200 None
+2024-08-20 17:57:35 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 429 None
+2024-08-20 17:57:35 [deloitte_industries] WARNING: Rate limit exceeded, retrying in 16.72 seconds...
+2024-08-20 17:57:52 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "GET /drive/v3/files?q=mimeType%3D%22application%2Fvnd.google-apps.spreadsheet%22+and+name+%3D+%22Web+Scraping+Data%22&pageSize=1000&supportsAllDrives=True&includeItemsFromAllDrives=True&fields=kind%2CnextPageToken%2Cfiles%28id%2Cname%2CcreatedTime%2CmodifiedTime%29 HTTP/1.1" 200 None
+2024-08-20 17:57:52 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 429 None
+2024-08-20 17:57:52 [deloitte_industries] WARNING: Rate limit exceeded, retrying in 32.00 seconds...
+2024-08-20 17:58:24 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "GET /drive/v3/files?q=mimeType%3D%22application%2Fvnd.google-apps.spreadsheet%22+and+name+%3D+%22Web+Scraping+Data%22&pageSize=1000&supportsAllDrives=True&includeItemsFromAllDrives=True&fields=kind%2CnextPageToken%2Cfiles%28id%2Cname%2CcreatedTime%2CmodifiedTime%29 HTTP/1.1" 200 None
+2024-08-20 17:58:24 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 429 None
+2024-08-20 17:58:24 [deloitte_industries] WARNING: Rate limit exceeded, retrying in 32.00 seconds...
+2024-08-20 17:58:56 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "GET /drive/v3/files?q=mimeType%3D%22application%2Fvnd.google-apps.spreadsheet%22+and+name+%3D+%22Web+Scraping+Data%22&pageSize=1000&supportsAllDrives=True&includeItemsFromAllDrives=True&fields=kind%2CnextPageToken%2Cfiles%28id%2Cname%2CcreatedTime%2CmodifiedTime%29 HTTP/1.1" 200 None
+2024-08-20 17:58:56 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 200 None
+2024-08-20 17:58:57 [urllib3.connectionpool] DEBUG: https://www.googleapis.com:443 "POST /drive/v3/files/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/permissions?supportsAllDrives=true HTTP/1.1" 200 None
+2024-08-20 17:58:58 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4?includeGridData=false HTTP/1.1" 200 None
+2024-08-20 17:58:59 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "POST /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4:batchUpdate HTTP/1.1" 200 None
+2024-08-20 17:58:59 [scrapy.extensions.logstats] INFO: Crawled 0 pages (at 0 pages/min), scraped 0 items (at 0 items/min)
+2024-08-20 17:58:59 [scrapy.extensions.telnet] INFO: Telnet console listening on 127.0.0.1:6023
+2024-08-20 17:58:59 [deloitte_industries] DEBUG: User-Agent: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 7_2_7; en-US) Gecko/20100101 Firefox/65.4 for https://www2.deloitte.com/us/en.html
+2024-08-20 17:58:59 [tldextract.cache] WARNING: unable to cache publicsuffix.org-tlds.{'urls': ('https://publicsuffix.org/list/public_suffix_list.dat', 'https://raw.githubusercontent.com/publicsuffix/list/master/public_suffix_list.dat'), 'fallback_to_snapshot': True} in C:\Program Files\Python311\Lib\site-packages\tldextract\.suffix_cache\publicsuffix.org-tlds\de84b5ca2167d4c83e38fb162f2e8738.tldextract.json. This could refresh the Public Suffix List over HTTP every app startup. Construct your `TLDExtract` with a writable `cache_dir` or set `cache_dir=None` to silence this warning. [WinError 5] Access is denied: 'C:\\Program Files\\Python311\\Lib\\site-packages\\tldextract\\.suffix_cache'
+2024-08-20 17:58:59 [urllib3.connectionpool] DEBUG: Starting new HTTPS connection (1): publicsuffix.org:443
+2024-08-20 17:58:59 [urllib3.connectionpool] DEBUG: https://publicsuffix.org:443 "GET /list/public_suffix_list.dat HTTP/1.1" 200 84514
+2024-08-20 17:58:59 [scrapy.core.engine] DEBUG: Crawled (200) <GET https://www2.deloitte.com/us/en.html> (referer: None)
+2024-08-20 17:58:59 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:00 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AD1 HTTP/1.1" 200 None
+2024-08-20 17:59:00 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AD1?valueInputOption=RAW HTTP/1.1" 200 None
+2024-08-20 17:59:00 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:00 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:00 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:01 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A2%3AD2 HTTP/1.1" 200 None
+2024-08-20 17:59:01 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A2%3AD2?valueInputOption=RAW HTTP/1.1" 200 None
+2024-08-20 17:59:01 [scrapy.core.scraper] DEBUG: Scraped from <200 https://www2.deloitte.com/us/en.html>
+{'title': 'Consumer', 'service': 'Consumer', 'service_href': 'https://www2.deloitte.com/us/en/industries/consumer-industry.html?icid=top_consumer-industry', 'subservices': 'Automotive: https://www2.deloitte.com/us/en/pages/consumer-business/topics/automotive.html?icid=top_automotive, Consumer Products: https://www2.deloitte.com/us/en/pages/consumer-business/topics/consumer-products.html?icid=top_consumer-products, Retail, Wholesale & Distribution: https://www2.deloitte.com/us/en/pages/consumer-business/topics/retail-wholesale-distribution.html?icid=top_retail-wholesale-distribution, Transportation, Hospitality & Services: https://www2.deloitte.com/us/en/pages/consumer-business/topics/transportation-hospitality-and-services-trends.html?icid=top_transportation-hospitality-and-services-trends'}
+2024-08-20 17:59:01 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:01 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:01 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:01 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:02 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A3%3AD3 HTTP/1.1" 200 None
+2024-08-20 17:59:02 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A3%3AD3?valueInputOption=RAW HTTP/1.1" 200 None
+2024-08-20 17:59:02 [scrapy.core.scraper] DEBUG: Scraped from <200 https://www2.deloitte.com/us/en.html>
+{'title': 'Energy, Resources & Industrials', 'service': 'Energy, Resources & Industrials', 'service_href': 'https://www2.deloitte.com/us/en/industries/energy-resources-industrials.html?icid=top_', 'subservices': 'Industrial Products & Construction: https://www2.deloitte.com/us/en/industries/industrials-sector-services.html?icid=top_industrials-sector-services, Power, Utilities & Renewables: https://www2.deloitte.com/us/en/industries/power-utilities-and-renewables-industry-hub.html?icid=top_power-utilities-and-renewables-industry-hub, Energy & Chemicals: https://www2.deloitte.com/us/en/pages/energy-and-resources/topics/energy-chemicals.html?icid=top_, Mining & Metals: https://www2.deloitte.com/us/en/pages/energy-and-resources/articles/mining-and-metals.html?icid=top_mining-and-metals'}
+2024-08-20 17:59:02 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:02 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:02 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:02 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:02 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A4%3AD4 HTTP/1.1" 200 None
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A4%3AD4?valueInputOption=RAW HTTP/1.1" 200 None
+2024-08-20 17:59:03 [scrapy.core.scraper] DEBUG: Scraped from <200 https://www2.deloitte.com/us/en.html>
+{'title': 'Financial Services', 'service': 'Financial Services', 'service_href': 'https://www2.deloitte.com/us/en/industries/financial-services.html?icid=top_financial-services', 'subservices': 'Banking & Capital Markets: https://www2.deloitte.com/us/en/pages/financial-services/topics/banking-capital-markets.html?icid=top_banking-capital-markets, Insurance: https://www2.deloitte.com/us/en/pages/financial-services/topics/insurance.html?icid=top_insurance, Investment Management: https://www2.deloitte.com/us/en/pages/financial-services/topics/investment-management.html?icid=top_investment-management, Real Estate: https://www2.deloitte.com/us/en/pages/real-estate/topics/real-estate.html?icid=top_real-estate'}
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A5%3AD5 HTTP/1.1" 200 None
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A5%3AD5?valueInputOption=RAW HTTP/1.1" 200 None
+2024-08-20 17:59:03 [scrapy.core.scraper] DEBUG: Scraped from <200 https://www2.deloitte.com/us/en.html>
+{'title': 'Government & Public Services', 'service': 'Government & Public Services', 'service_href': 'https://www2.deloitte.com/us/en/industries/government-public-services.html?icid=top_government-public-services', 'subservices': 'Defense, Security & Justice: https://www2.deloitte.com/us/en/pages/public-sector/topics/defense-security-justice.html?icid=top_defense-security-justice, Federal health: https://www2.deloitte.com/us/en/pages/public-sector/topics/federal-health.html?icid=top_federal-health, Civil: https://www2.deloitte.com/us/en/pages/public-sector/topics/civil-government.html?icid=top_civil-government, State & Local: https://www2.deloitte.com/us/en/pages/public-sector/topics/state-government.html?icid=top_state-government, Higher Education: https://www2.deloitte.com/us/en/pages/public-sector/topics/higher-education.html?icid=top_higher-education'}
+2024-08-20 17:59:03 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A6%3AD6 HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A6%3AD6?valueInputOption=RAW HTTP/1.1" 200 None
+2024-08-20 17:59:04 [scrapy.core.scraper] DEBUG: Scraped from <200 https://www2.deloitte.com/us/en.html>
+{'title': 'Life Sciences & Health Care', 'service': 'Life Sciences & Health Care', 'service_href': 'https://www2.deloitte.com/us/en/industries/life-sciences-and-health-care.html?icid=top_life-sciences-and-health-care', 'subservices': 'Health Care: https://www2.deloitte.com/us/en/pages/life-sciences-and-health-care/topics/health-care.html?icid=top_health-care, Life Sciences: https://www2.deloitte.com/us/en/pages/life-sciences-and-health-care/topics/life-sciences.html?icid=top_life-sciences'}
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3A1 HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:04 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A1%3AA?valueRenderOption=FORMATTED_VALUE&majorDimension=COLUMNS HTTP/1.1" 200 None
+2024-08-20 17:59:05 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "GET /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A7%3AD7 HTTP/1.1" 200 None
+2024-08-20 17:59:05 [urllib3.connectionpool] DEBUG: https://sheets.googleapis.com:443 "PUT /v4/spreadsheets/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4/values/%27deloitte_industries_Data%27%21A7%3AD7?valueInputOption=RAW HTTP/1.1" 200 None
+2024-08-20 17:59:05 [scrapy.core.scraper] DEBUG: Scraped from <200 https://www2.deloitte.com/us/en.html>
+{'title': 'Technology, Media & Telecommunications', 'service': 'Technology, Media & Telecommunications', 'service_href': 'https://www2.deloitte.com/us/en/industries/technology-media-and-telecommunications.html?icid=top_technology-media-and-telecommunications', 'subservices': 'Technology: https://www2.deloitte.com/us/en/pages/technology-media-and-telecommunications/topics/technology-industry.html?icid=top_technology-industry, Telecommunications: https://www2.deloitte.com/us/en/pages/technology-media-and-telecommunications/topics/telecom-industry.html?icid=top_telecom-industry, Media & Entertainment: https://www2.deloitte.com/us/en/pages/technology-media-and-telecommunications/topics/telecommunications-media-entertainment.html?icid=top_'}
+2024-08-20 17:59:05 [scrapy.core.engine] INFO: Closing spider (finished)
+2024-08-20 17:59:05 [deloitte_industries] INFO: ExportPipeline closed the files.
+2024-08-20 17:59:05 [deloitte_industries] INFO: GoogleSheetsPipeline finished processing and saved data to https://docs.google.com/spreadsheets/d/1qmPXhTIHutHWUto37O97aKG-vW2A1fCzD6WqbqJu9v4
+2024-08-20 17:59:05 [scrapy.statscollectors] INFO: Dumping Scrapy stats:
+{'downloader/request_bytes': 698,
+ 'downloader/request_count': 1,
+ 'downloader/request_method_count/GET': 1,
+ 'downloader/response_bytes': 25271,
+ 'downloader/response_count': 1,
+ 'downloader/response_status_count/200': 1,
+ 'elapsed_time_seconds': 6.192954,
+ 'finish_reason': 'finished',
+ 'finish_time': datetime.datetime(2024, 8, 20, 22, 59, 5, 409899, tzinfo=datetime.timezone.utc),
+ 'httpcompression/response_bytes': 148727,
+ 'httpcompression/response_count': 1,
+ 'item_scraped_count': 6,
+ 'log_count/DEBUG': 74,
+ 'log_count/INFO': 12,
+ 'log_count/WARNING': 7,
+ 'response_received_count': 1,
+ 'scheduler/dequeued': 1,
+ 'scheduler/dequeued/memory': 1,
+ 'scheduler/enqueued': 1,
+ 'scheduler/enqueued/memory': 1,
+ 'start_time': datetime.datetime(2024, 8, 20, 22, 58, 59, 216945, tzinfo=datetime.timezone.utc)}
+2024-08-20 17:59:05 [scrapy.core.engine] INFO: Spider closed (finished)
